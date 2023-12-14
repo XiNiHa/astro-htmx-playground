@@ -5,4 +5,5 @@ export const client = new GraphQLClient("https://api.github.com/graphql", {
     Authorization: `Bearer ${import.meta.env.GITHUB_TOKEN}`,
     "User-Agent": "graphql-request",
   },
+  fetch,
 });

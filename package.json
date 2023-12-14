@@ -12,6 +12,7 @@
   },
   "dependencies": {
     "@astrojs/check": "^0.3.2",
+    "@astrojs/cloudflare": "^8.0.0",
     "@astrojs/solid-js": "^3.0.2",
     "astro": "^4.0.4",
     "graphql": "^16.8.1",
