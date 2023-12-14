@@ -1,0 +1,19 @@
+---
+import { type FragmentType, useFragment } from "@/gql";
+import { IssueSummaryFragment } from "@/operations/issues";
+
+interface Props {
+  $issue: FragmentType<typeof IssueSummaryFragment>;
+}
+
+const { $issue } = Astro.props;
+const issue = useFragment(IssueSummaryFragment, $issue);
+---
+
+<li>
+  <p>
+    {issue.title}
+    <span>{issue.state}</span>
+  </p>
+  <span>{issue.author?.login}</span>
+</li>

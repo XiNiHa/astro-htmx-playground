@@ -1,0 +1,48 @@
+---
+import { match, P } from "ts-pattern";
+import { cursorSchema } from "@/common/cursor";
+import { loadIssues } from "@/operations/issues";
+import IssueSummary from "@/components/IssueSummary.astro";
+import LoadMore from "@/components/LoadMore.astro";
+
+const { owner = "", repo = "" } = Astro.params;
+const search = Object.fromEntries(Astro.url.searchParams.entries());
+const cursors = cursorSchema.parse(search);
+const issues = await loadIssues({ owner, name: repo }, cursors);
+
+export const partial = true;
+---
+
+{
+  issues.repository?.issues.pageInfo.hasPreviousPage &&
+    match(cursors)
+      .with({ last: P.number, before: P.string }, ({ last }) => (
+        <LoadMore
+          direction="prev"
+          owner={owner}
+          repo={repo}
+          count={last}
+          cursor={issues.repository?.issues.pageInfo.startCursor ?? ""}
+        />
+      ))
+      .otherwise(() => {})
+}
+{
+  issues.repository?.issues.nodes
+    ?.filter(Boolean)
+    .map((issue) => <IssueSummary $issue={issue} />)
+}
+{
+  issues.repository?.issues.pageInfo.hasNextPage &&
+    match(cursors)
+      .with({ first: P.number, after: P.string }, ({ first }) => (
+        <LoadMore
+          direction="next"
+          owner={owner}
+          repo={repo}
+          count={first}
+          cursor={issues.repository?.issues.pageInfo.endCursor ?? ""}
+        />
+      ))
+      .otherwise(() => {})
+}

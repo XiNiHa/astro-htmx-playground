@@ -1,0 +1,40 @@
+---
+import { match } from "ts-pattern";
+
+interface Props {
+  owner: string;
+  repo: string;
+  direction: "next" | "prev";
+  count: number;
+  cursor: string;
+}
+
+const { owner, repo, direction, count, cursor } = Astro.props;
+
+const { loaderId, countName, cursorName, label } = match(direction)
+  .with("next", () => ({
+    loaderId: "issue-summary-loader-next",
+    countName: "first",
+    cursorName: "after",
+    label: "Load next",
+  }))
+  .with("prev", () => ({
+    loaderId: "issue-summary-loader-prev",
+    countName: "last",
+    cursorName: "before",
+    label: "Load previous",
+  }))
+  .exhaustive();
+---
+
+<div id={loaderId}>
+  <button
+    hx-get={`/${owner}/${repo}/partial?${countName}=${count}&${cursorName}=${cursor}`}
+    hx-trigger="click"
+    hx-target={`#${loaderId}`}
+    hx-swap="outerHTML"
+    hx-on={`click: setQuery({ ${cursorName}: '${cursor}' })`}
+  >
+    {label}
+  </button>
+</div>

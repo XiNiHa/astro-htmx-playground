@@ -1,0 +1,84 @@
+---
+import { match, P } from "ts-pattern";
+import { cursorSchema } from "@/common/cursor";
+import { loadIssues } from "@/operations/issues";
+import Layout from "@/components/Layout.astro";
+import LoadMore from "@/components/LoadMore.astro";
+import IssueSummary from "@/components/IssueSummary.astro";
+
+const { owner = "", repo = "" } = Astro.params;
+const search = Object.fromEntries(Astro.url.searchParams.entries());
+const cursors = cursorSchema.safeParse(search);
+const issues = await loadIssues(
+  { owner, name: repo },
+  cursors.success ? cursors.data : { first: 10 }
+);
+---
+
+<Layout title={`${owner}/${repo}`}>
+  <h1>{owner}/{repo}</h1>
+  <ul>
+    {
+      issues.repository?.issues.pageInfo.hasPreviousPage && (
+        <LoadMore
+          direction="prev"
+          owner={owner}
+          repo={repo}
+          count={match(cursors)
+            .with({ success: false }, () => 10)
+            .with(
+              { success: true, data: { last: P.number } },
+              ({ data: { last } }) => last
+            )
+            .with(
+              { success: true, data: { first: P.number } },
+              ({ data: { first } }) => first
+            )
+            .exhaustive()}
+          cursor={issues.repository?.issues.pageInfo.startCursor ?? ""}
+        />
+      )
+    }
+    {
+      issues.repository?.issues.nodes
+        ?.filter(Boolean)
+        .map((issue) => <IssueSummary $issue={issue} />)
+    }
+    {
+      issues.repository?.issues.pageInfo.hasNextPage && (
+        <LoadMore
+          direction="next"
+          owner={owner}
+          repo={repo}
+          count={match(cursors)
+            .with({ success: false }, () => 10)
+            .with(
+              { success: true, data: { last: P.number } },
+              ({ data: { last } }) => last
+            )
+            .with(
+              { success: true, data: { first: P.number } },
+              ({ data: { first } }) => first
+            )
+            .exhaustive()}
+          cursor={issues.repository?.issues.pageInfo.endCursor ?? ""}
+        />
+      )
+    }
+  </ul>
+  <script>
+    declare global {
+      interface Window {
+        setQuery: (query: Record<string, string>) => void;
+      }
+    }
+
+    window.setQuery = (query) => {
+      const url = new URL(location.href);
+      for (const [key, value] of Object.entries(query)) {
+        url.searchParams.set(key, value);
+      }
+      window.history.pushState({}, "", url);
+    };
+  </script>
+</Layout>
